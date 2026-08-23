@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>UV Dalaguete Campus Voting System</title>
+<meta name="description" content="Official voting portal for the University of the Visayas - Dalaguete Campus." />
+<meta name="theme-color" content="#0a120e" />
+
+<!-- Theme is applied before first paint to avoid a flash -->
+<script src="js/theme.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="css/styles.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2326c274'%3E%3Ccircle cx='12' cy='12' r='12'/%3E%3C/svg%3E" />
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark and light theme">
+      <i data-lucide="sun-moon" class="icon"></i>
+    </button>
+  </div>
+
+  <main class="login-main">
+    <div class="login-card">
+      <div class="brand">
+        <div class="brand-mark">
+          <i data-lucide="vote" class="icon"></i>
+        </div>
+        <h1>UV Dalaguete Campus<br />Voting System</h1>
+        <p>Sign in with your student ID to cast your vote.</p>
+      </div>
+
+      <div id="alert" class="alert" role="alert" aria-live="polite">
+        <i data-lucide="circle-alert" class="icon"></i>
+        <span id="alert-text"></span>
+      </div>
+
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label for="id-number">ID Number</label>
+          <div class="input-wrap">
+            <span class="icon-leading"><i data-lucide="id-card" class="icon"></i></span>
+            <input
+              id="id-number"
+              name="idNumber"
+              type="text"
+              inputmode="numeric"
+              autocomplete="username"
+              placeholder="e.g. 26200011"
+              autocapitalize="off"
+              autocorrect="off"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="lastname">Password (Lastname)</label>
+          <div class="input-wrap">
+            <span class="icon-leading"><i data-lucide="key-round" class="icon"></i></span>
+            <input
+              id="lastname"
+              name="lastname"
+              type="password"
+              autocomplete="current-password"
+              placeholder="Your lastname"
+              required
+            />
+            <button type="button" id="toggle-password" class="icon-btn" aria-label="Show password">
+              <i data-lucide="eye" class="icon"></i>
+            </button>
+          </div>
+          <p class="field-hint">Use your lastname as your password. Not case-sensitive.</p>
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn-primary">
+          <span id="submit-icon"><i data-lucide="log-in" class="icon"></i></span>
+          <span id="submit-label">Sign In</span>
+        </button>
+      </form>
+
+      <p class="login-footer">
+        University of the Visayas &mdash; Dalaguete Campus<br />
+        Having trouble signing in? Contact your campus COMELEC.
+      </p>
+    </div>
+  </main>
+</div>
+
+<script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.js"></script>
+<script>
+  if (window.lucide) window.lucide.createIcons();
+
+  document.getElementById("theme-toggle").addEventListener("click", () => {
+    window.UVDC_THEME.toggle();
+  });
+</script>
+<script type="module" src="js/auth.js"></script>
+</body>
+</html>
