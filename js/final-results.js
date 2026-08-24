@@ -20,6 +20,8 @@ const DEFAULT_PHOTO = "images/default-avatar.svg";
 const session = initSidebar("final-results.html");
 const root = document.getElementById("winners-root");
 
+let lastPositions = null;
+
 if (session && root) {
   initFinalResults();
 }
@@ -50,6 +52,7 @@ async function initFinalResults() {
       return;
     }
 
+    lastPositions = positions;
     renderWinners(positions);
   } catch (err) {
     console.error(err);
@@ -111,10 +114,22 @@ function topCandidates(group) {
 }
 
 function renderWinners(positions) {
+  const role = Number(session?.user?.role);
+
   root.innerHTML = `
     <div class="winners-header">
-      <h2>Final Results</h2>
-      <p>The leading candidate for each position, based on votes cast.</p>
+      <div>
+        <h2>Final Results</h2>
+        <p>The leading candidate for each position, based on votes cast.</p>
+      </div>
+      ${
+        role === 3
+          ? `<button type="button" class="btn-primary winners-export-btn" id="export-results-btn">
+              <i data-lucide="download" class="icon"></i>
+              <span>Export as Image</span>
+            </button>`
+          : ""
+      }
     </div>
     <div class="winner-grid">
       ${positions.map(winnerCardHtml).join("")}
@@ -123,6 +138,141 @@ function renderWinners(positions) {
 
   hydrateWinnerPhotos(root);
   if (window.lucide) window.lucide.createIcons();
+
+  document
+    .getElementById("export-results-btn")
+    ?.addEventListener("click", (e) => exportResultsAsImage(e.currentTarget));
+}
+
+// ---------- Export as image (role 3 only) ----------
+
+async function loadHtml2Canvas() {
+  if (window.html2canvas) return window.html2canvas;
+  await new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js";
+    script.onload = resolve;
+    script.onerror = () => reject(new Error("Failed to load html2canvas"));
+    document.head.appendChild(script);
+  });
+  return window.html2canvas;
+}
+
+async function exportResultsAsImage(btn) {
+  if (!lastPositions) return;
+
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-circle" class="icon spin"></i><span>Exporting&hellip;</span>';
+  if (window.lucide) window.lucide.createIcons();
+
+  let poster;
+  try {
+    const html2canvas = await loadHtml2Canvas();
+    poster = buildExportPoster(lastPositions);
+    // Let the browser load the display font, lay out the poster, and swap in
+    // lucide icons before capture.
+    await Promise.all([document.fonts.ready, new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))]);
+
+    const canvas = await html2canvas(poster, { backgroundColor: "#0b6e4f", scale: 2, useCORS: true });
+
+    const link = document.createElement("a");
+    link.download = `final-results-${new Date().toISOString().slice(0, 10)}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+
+    btn.innerHTML = '<i data-lucide="check" class="icon"></i><span>Exported!</span>';
+  } catch (err) {
+    console.error(err);
+    btn.innerHTML = '<i data-lucide="circle-alert" class="icon"></i><span>Export failed</span>';
+  } finally {
+    poster?.remove();
+  }
+
+  if (window.lucide) window.lucide.createIcons();
+  btn.disabled = false;
+  setTimeout(() => {
+    btn.innerHTML = originalHtml;
+    if (window.lucide) window.lucide.createIcons();
+  }, 1500);
+}
+
+// Builds an off-screen, purpose-designed "congratulations" poster (rather than
+// screenshotting the live theme-aware cards) so the exported PNG always looks
+// the same regardless of the viewer's light/dark theme.
+function buildExportPoster(positions) {
+  const dateStr = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const poster = document.createElement("div");
+  poster.className = "export-poster";
+  poster.innerHTML = `
+    <div class="export-poster__glow export-poster__glow--tl"></div>
+    <div class="export-poster__glow export-poster__glow--br"></div>
+    <div class="export-poster__logo-space">
+      <img class="export-poster__logo" src="images/uv-logo.png" alt="UV logo" />
+    </div>
+    <p class="export-poster__kicker">UV Dalaguete Campus &middot; SSC Officers</p>
+    <h1 class="export-poster__title">Congratulations</h1>
+    <p class="export-poster__subtitle">to our newly elected SSC officers</p>
+    <p class="export-poster__year">School Year 2026-2027</p>
+    <div class="export-poster__divider"><i data-lucide="sparkles"></i></div>
+    <div class="export-grid">
+      ${positions.map(posterCardHtml).join("")}
+    </div>
+    <div class="export-poster__footer">Official Results &middot; <strong>${escapeHtml(dateStr)}</strong></div>
+  `;
+
+  document.body.appendChild(poster);
+  hydrateWinnerPhotos(poster);
+
+  const logo = poster.querySelector(".export-poster__logo");
+  if (logo) {
+    logo.addEventListener("error", () => {
+      logo.remove();
+    });
+  }
+
+  if (window.lucide) window.lucide.createIcons();
+  return poster;
+}
+
+function posterCardHtml(group) {
+  const winners = topCandidates(group);
+  return winners.length > 1 ? tiedPosterCardHtml(group, winners) : singleWinnerPosterCardHtml(group, winners[0]);
+}
+
+function singleWinnerPosterCardHtml(group, winner) {
+  const name = escapeHtml(candidateName(winner));
+
+  return `
+    <div class="export-card">
+      <span class="export-card__position">${escapeHtml(group.label)}</span>
+      <span class="export-card__photo-wrap">
+        <img class="export-card__photo winner-photo" data-key="${winner.key}" src="images/${winner.key}.png" alt="${name}" />
+        <span class="export-card__crown"><i data-lucide="crown"></i></span>
+      </span>
+      <strong class="export-card__name">${name}</strong>
+    </div>
+  `;
+}
+
+function tiedPosterCardHtml(group, winners) {
+  const names = winners.map((c) => `<strong class="export-card__name">${escapeHtml(candidateName(c))}</strong>`);
+
+  return `
+    <div class="export-card tied">
+      <span class="export-card__position">${escapeHtml(group.label)}</span>
+      <span class="export-card__photo-wrap">
+        <img class="export-card__photo winner-photo" src="${DEFAULT_PHOTO}" alt="Tied result" />
+      </span>
+      <span class="export-card__names">${names.join("")}</span>
+      <span class="export-card__tag">Tied</span>
+    </div>
+  `;
 }
 
 function winnerCardHtml(group) {

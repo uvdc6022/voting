@@ -733,6 +733,11 @@ body.sidebar-open {
 }
 
 .winners-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
   margin-bottom: 18px;
 }
 
@@ -746,6 +751,12 @@ body.sidebar-open {
   font-size: 0.85rem;
   color: var(--text-dim);
   max-width: 46ch;
+}
+
+.winners-export-btn {
+  width: auto;
+  flex-shrink: 0;
+  padding: 11px 18px;
 }
 
 .winner-grid {
@@ -859,6 +870,253 @@ body.sidebar-open {
 .winner-card.tied .winner-votes {
   background: var(--surface-2);
   color: var(--text-dim);
+}
+
+/* ---------- Export poster (shareable results image) ---------- */
+
+.export-poster {
+  position: fixed;
+  top: 0;
+  left: -99999px;
+  width: 1080px;
+  padding: 64px 70px 52px;
+  overflow: hidden;
+  background:
+    radial-gradient(700px 380px at 88% -8%, rgba(255, 255, 255, 0.14), transparent 60%),
+    radial-gradient(600px 500px at -5% 105%, rgba(0, 0, 0, 0.25), transparent 60%),
+    linear-gradient(160deg, #0a4d38 0%, #0b6e4f 42%, #148a5c 72%, #1fa25e 100%);
+  color: #fdfdfb;
+  font-family: var(--font);
+  text-align: center;
+}
+
+.export-poster__glow {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.16), transparent 70%);
+  pointer-events: none;
+}
+
+.export-poster__glow--tl {
+  top: -140px;
+  left: -140px;
+  width: 320px;
+  height: 320px;
+}
+
+.export-poster__glow--br {
+  bottom: -160px;
+  right: -100px;
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(227, 178, 60, 0.22), transparent 70%);
+}
+
+.export-poster__logo-space {
+  position: relative;
+  height: 200px;
+  margin-top: -50px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.export-poster__logo {
+  display: block;
+  max-height: 100%;
+  max-width: 300px;
+  object-fit: contain;
+}
+
+.export-poster__kicker {
+  position: relative;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #f3cf72;
+  margin-bottom: 10px;
+}
+
+.export-poster__title {
+  position: relative;
+  font-family: "Playfair Display", "Georgia", serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 3.4rem;
+  line-height: 1.08;
+  letter-spacing: 0.01em;
+  margin: 0;
+  color: #f3cf72;
+  text-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
+}
+
+.export-poster__subtitle {
+  position: relative;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #f2f7f4;
+  margin: 10px 0 0;
+}
+
+.export-poster__year {
+  position: relative;
+  display: inline-block;
+  margin: 10px auto 0;
+  padding: 6px 20px;
+  border: 1px solid rgba(243, 207, 114, 0.6);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #f3cf72;
+  background: rgba(243, 207, 114, 0.1);
+}
+
+.export-poster__divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 10px auto 10px;
+  width: 100%;
+  max-width: 460px;
+}
+
+.export-poster__divider::before,
+.export-poster__divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(243, 207, 114, 0.7), transparent);
+}
+
+.export-poster__divider svg {
+  width: 22px;
+  height: 22px;
+  color: #f3cf72;
+}
+
+.export-grid {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 22px;
+}
+
+.export-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 calc(25% - 16.5px);
+  max-width: calc(25% - 16.5px);
+  padding: 22px 14px 18px;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  box-shadow: 0 14px 30px -18px rgba(0, 0, 0, 0.5);
+}
+
+.export-card__position {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f3cf72;
+  margin-bottom: 12px;
+}
+
+.export-card__photo-wrap {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  flex-shrink: 0;
+  margin-bottom: 12px;
+}
+
+.export-card__photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.15);
+  border: 3px solid #f3cf72;
+  box-shadow: 0 0 0 5px rgba(243, 207, 114, 0.18);
+}
+
+.export-card__crown {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(155deg, #f3cf72, #8a6408);
+  color: #1a2a20;
+  border: 3px solid #0b6e4f;
+}
+
+.export-card__crown svg {
+  width: 14px;
+  height: 14px;
+}
+
+.export-card__name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.export-card__party {
+  font-size: 0.76rem;
+  color: rgba(253, 253, 251, 0.72);
+  max-width: 22ch;
+}
+
+.export-card.tied .export-card__names {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.export-card.tied .export-card__name {
+  font-size: 0.92rem;
+}
+
+.export-card.tied .export-card__tag {
+  margin-top: 8px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fdfdfb;
+}
+
+.export-poster__footer {
+  position: relative;
+  margin-top: 44px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 0.8rem;
+  color: rgba(253, 253, 251, 0.65);
+  letter-spacing: 0.02em;
+}
+
+.export-poster__footer strong {
+  color: #f3cf72;
 }
 
 /* ---------- Ballot (cast-vote) ---------- */
