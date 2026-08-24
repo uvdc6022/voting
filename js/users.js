@@ -11,6 +11,7 @@ if (session && root) {
 
 async function initUsersPage(currentUser) {
   const canAddUser = Number(currentUser?.role) === 3;
+  const canCopyList = [2, 3].includes(Number(currentUser?.role));
 
   try {
     const [{ initializeApp }, dbModule, { firebaseConfig }] = await Promise.all([
@@ -36,7 +37,7 @@ async function initUsersPage(currentUser) {
       return { ...u, idNumber: String(u.idNumber ?? key), voted: votedIds.has(String(u.idNumber ?? key)) };
     });
 
-    renderPage({ db, ref, get, set, allUsers, canAddUser });
+    renderPage({ db, ref, get, set, allUsers, canAddUser, canCopyList });
   } catch (err) {
     console.error(err);
     renderError();
@@ -45,7 +46,7 @@ async function initUsersPage(currentUser) {
 
 // ---------- Shell + filters ----------
 
-function renderPage({ db, ref, get, set, allUsers, canAddUser }) {
+function renderPage({ db, ref, get, set, allUsers, canAddUser, canCopyList }) {
   const visibleUsers = allUsers.filter((u) => Number(u.role) !== 3);
   const courses = Array.from(new Set(visibleUsers.map((u) => u.course).filter(Boolean))).sort();
   const levels = Array.from(
@@ -90,6 +91,14 @@ function renderPage({ db, ref, get, set, allUsers, canAddUser }) {
         <option value="voted">Voted</option>
         <option value="not-voted">Not Voted</option>
       </select>
+      ${
+        canCopyList
+          ? `<button type="button" class="btn-ghost users-copy-btn" id="copy-list-btn">
+              <i data-lucide="clipboard-copy" class="icon"></i>
+              <span>Copy List</span>
+            </button>`
+          : ""
+      }
     </div>
 
     <p class="users-match-text" id="users-match-text"></p>
@@ -149,6 +158,8 @@ function renderPage({ db, ref, get, set, allUsers, canAddUser }) {
     openAddUserModal({ db, ref, get, set, allUsers, onAdded: () => renderTable(allUsers, state) });
   });
 
+  document.getElementById("copy-list-btn")?.addEventListener("click", (e) => copyFilteredList(allUsers, state, e.currentTarget));
+
   renderTable(allUsers, state);
 }
 
@@ -190,6 +201,64 @@ function filterUsers(allUsers, state) {
     }
     return true;
   });
+}
+
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (err) {
+      // Fall through to the legacy fallback below (e.g. non-secure context on mobile).
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";
+  textarea.style.top = "-1000px";
+  textarea.style.left = "-1000px";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  let succeeded = false;
+  try {
+    succeeded = document.execCommand("copy");
+  } catch (err) {
+    succeeded = false;
+  }
+  document.body.removeChild(textarea);
+
+  if (!succeeded) throw new Error("Copy command failed");
+}
+
+function formatFullName(u) {
+  return `${u.firstName ?? ""} ${u.middleInitial ? u.middleInitial + ". " : ""}${u.lastName ?? ""}`
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function copyFilteredList(allUsers, state, btn) {
+  const filtered = filterUsers(allUsers, state).sort((a, b) =>
+    `${a.lastName ?? ""} ${a.firstName ?? ""}`.localeCompare(`${b.lastName ?? ""} ${b.firstName ?? ""}`)
+  );
+
+  const text = filtered.map((u, i) => `${i + 1}. ${formatFullName(u)}`).join("\n");
+
+  const originalHtml = btn.innerHTML;
+  try {
+    await copyTextToClipboard(text);
+    btn.innerHTML = '<i data-lucide="check" class="icon"></i><span>Copied!</span>';
+  } catch (err) {
+    console.error(err);
+    btn.innerHTML = '<i data-lucide="circle-alert" class="icon"></i><span>Copy failed</span>';
+  }
+  if (window.lucide) window.lucide.createIcons();
+  setTimeout(() => {
+    btn.innerHTML = originalHtml;
+    if (window.lucide) window.lucide.createIcons();
+  }, 1500);
 }
 
 function renderTable(allUsers, state) {

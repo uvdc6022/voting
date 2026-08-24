@@ -1410,6 +1410,17 @@ body.sidebar-open {
   box-shadow: var(--focus-ring);
 }
 
+.users-copy-btn {
+  width: 100%;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.users-copy-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
 .input-wrap select {
   flex: 1;
   min-width: 0;
@@ -1626,6 +1637,10 @@ body.sidebar-open {
 
   .users-select {
     flex: 1;
+    width: auto;
+  }
+
+  .users-copy-btn {
     width: auto;
   }
 
