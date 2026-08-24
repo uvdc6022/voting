@@ -287,6 +287,7 @@ function renderTable(allUsers, state) {
     pageItems.length === 0
       ? `<tr class="users-empty-row"><td colspan="6">No users match these filters.</td></tr>`
       : pageItems.map(userRowHtml).join("");
+  if (window.lucide) window.lucide.createIcons();
 
   renderPagination(state, totalPages, () => renderTable(allUsers, state));
 }
