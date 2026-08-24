@@ -113,18 +113,83 @@ function candidateName(c) {
 }
 
 function renderResults(positions, totalVoters) {
+  const role = Number(session?.user?.role);
+
   root.innerHTML = `
     <div class="dash-results-header">
-      <h2>Live Results</h2>
-      <p>Each candidate's progress bar is measured against ${totalVoters} registered voter${totalVoters === 1 ? "" : "s"}.</p>
+      <div>
+        <h2>Live Results</h2>
+        <p>Each candidate's progress bar is measured against ${totalVoters} registered voter${totalVoters === 1 ? "" : "s"}.</p>
+      </div>
+      ${
+        role === 3
+          ? `<button type="button" class="btn-primary dash-export-btn" id="export-dashboard-btn">
+              <i data-lucide="download" class="icon"></i>
+              <span>Export as Image</span>
+            </button>`
+          : ""
+      }
     </div>
-    <div class="dash-results-list">
+    <div class="dash-results-list" id="dash-export-target">
       ${positions.map((group) => positionResultHtml(group, totalVoters)).join("")}
     </div>
   `;
 
   hydrateCandidatePhotos(root);
   if (window.lucide) window.lucide.createIcons();
+
+  document
+    .getElementById("export-dashboard-btn")
+    ?.addEventListener("click", (e) => exportDashboardAsImage(e.currentTarget));
+}
+
+// ---------- Export as image (role 3 only) ----------
+
+async function loadHtml2Canvas() {
+  if (window.html2canvas) return window.html2canvas;
+  await new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js";
+    script.onload = resolve;
+    script.onerror = () => reject(new Error("Failed to load html2canvas"));
+    document.head.appendChild(script);
+  });
+  return window.html2canvas;
+}
+
+async function exportDashboardAsImage(btn) {
+  const target = document.getElementById("dash-export-target");
+  if (!target) return;
+
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-circle" class="icon spin"></i><span>Exporting&hellip;</span>';
+  if (window.lucide) window.lucide.createIcons();
+
+  try {
+    const html2canvas = await loadHtml2Canvas();
+    const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#0a120e";
+
+    await document.fonts.ready;
+    const canvas = await html2canvas(target, { backgroundColor: bg, scale: 2, useCORS: true });
+
+    const link = document.createElement("a");
+    link.download = `dashboard-results-${new Date().toISOString().slice(0, 10)}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+
+    btn.innerHTML = '<i data-lucide="check" class="icon"></i><span>Exported!</span>';
+  } catch (err) {
+    console.error(err);
+    btn.innerHTML = '<i data-lucide="circle-alert" class="icon"></i><span>Export failed</span>';
+  }
+
+  if (window.lucide) window.lucide.createIcons();
+  btn.disabled = false;
+  setTimeout(() => {
+    btn.innerHTML = originalHtml;
+    if (window.lucide) window.lucide.createIcons();
+  }, 1500);
 }
 
 function positionResultHtml(group, totalVoters) {
