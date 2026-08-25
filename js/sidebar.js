@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "cast-vote.html", label: "Cast Vote", icon: "vote", roles: [1, 2, 3] },
   { href: "users.html", label: "Users", icon: "users", roles: [2, 3] },
   { href: "voter-records.html", label: "Voter Records", icon: "list-checks", roles: [3] },
+  { href: "course-monitoring.html", label: "Course Monitoring", icon: "graduation-cap", roles: [3] },
   { href: "admins.html", label: "Admins", icon: "shield", roles: [3] },
 ];
 

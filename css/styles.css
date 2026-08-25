@@ -684,6 +684,93 @@ body.sidebar-open {
   width: 100%;
 }
 
+/* ---------- Course monitoring ---------- */
+
+.course-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.course-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.course-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.course-card-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.course-card-pct {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary-strong);
+  flex-shrink: 0;
+}
+
+.course-card-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.course-card-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.course-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.course-card-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.course-card-stat-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.course-card-stat-label {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+}
+
+.course-card-stat.voted .course-card-stat-value {
+  color: var(--success);
+}
+
+.course-card-stat.pending .course-card-stat-value {
+  color: var(--accent);
+}
+
 .result-rows {
   display: flex;
   flex-direction: column;
@@ -2092,22 +2179,61 @@ button.result-votes-btn:focus-visible {
     grid-template-columns: repeat(3, minmax(0, 220px));
   }
 
-  .winners-header,
-  .winner-grid {
-    max-width: 1080px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .dash-results-header,
   .dash-results-list {
-    max-width: 720px;
-    margin-left: auto;
-    margin-right: auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: start;
+    max-width: none;
+    gap: 16px;
+  }
+
+  .course-cards-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 18px;
+  }
+
+  .course-card {
+    padding: 20px;
+    gap: 14px;
+  }
+
+  .course-card-head h3 {
+    font-size: 1.1rem;
+  }
+
+  .course-card-pct {
+    font-size: 0.95rem;
+  }
+
+  .course-card-stat {
+    padding: 10px;
+  }
+
+  .course-card-stat-value {
+    font-size: 1.3rem;
+  }
+
+  .course-card-stat-label {
+    font-size: 0.72rem;
   }
 
   .winner-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+  }
+
+  .winner-card {
+    padding: 34px 20px 28px;
+  }
+
+  .winner-photo-wrap {
+    width: 150px;
+    height: 150px;
+    margin-bottom: 18px;
+  }
+
+  .winner-name {
+    font-size: 1.15rem;
   }
 }
 

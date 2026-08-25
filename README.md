@@ -49,6 +49,7 @@ cast-vote.html         Ballot / voting control
 users.html             User list & management
 voter-records.html      Per-voter vote lookup (super admin)
 admins.html             Admin management (super admin)
+course-monitoring.html  Per-course/year voting status (super admin)
 final-results.html      Final results / winners
 css/styles.css          Shared stylesheet (light + dark themes)
 js/                    Page scripts, session, theme, and Firebase config
