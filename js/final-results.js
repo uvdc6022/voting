@@ -39,10 +39,16 @@ async function initFinalResults() {
     const db = getDatabase(app);
 
     let candidates = null;
+    let users = null;
     let votes = null;
+    let settings = null;
 
     const renderIfReady = () => {
-      if (candidates === null || votes === null) return;
+      if (candidates === null || users === null || votes === null || settings === null) return;
+
+      const totalVoters = Object.values(users).filter((u) => Number(u?.role) !== 3).length;
+      const remainingNotVoted = Math.max(0, totalVoters - Object.keys(votes).length);
+      const votingOpen = settings.votingOpen === true;
 
       const voteCounts = countVotes(votes);
       const positions = groupCandidates(candidates, voteCounts);
@@ -50,6 +56,10 @@ async function initFinalResults() {
       if (positions.length === 0) {
         renderEmptyState();
         return;
+      }
+
+      for (const group of positions) {
+        Object.assign(group, computeWinnerStatus(group, remainingNotVoted, votingOpen));
       }
 
       lastPositions = positions;
@@ -62,7 +72,9 @@ async function initFinalResults() {
     };
 
     onValue(ref(db, "candidates"), (snap) => { candidates = snap.val() || {}; renderIfReady(); }, onError);
+    onValue(ref(db, "users"), (snap) => { users = snap.val() || {}; renderIfReady(); }, onError);
     onValue(ref(db, "votes"), (snap) => { votes = snap.val() || {}; renderIfReady(); }, onError);
+    onValue(ref(db, "settings"), (snap) => { settings = snap.val() || {}; renderIfReady(); }, onError);
   } catch (err) {
     console.error(err);
     renderError();
@@ -120,6 +132,23 @@ function candidateName(c) {
 function topCandidates(group) {
   const top = Math.max(...group.candidates.map((c) => c.votes));
   return group.candidates.filter((c) => c.votes === top);
+}
+
+// A leading candidate only gets the winner-crown once they can no longer be
+// caught: their vote count must exceed the strongest opponent's count even if
+// every remaining non-voter went to that opponent. Once voting is closed,
+// there are no more non-voters left to flip, so the current leader is final.
+function computeWinnerStatus(group, remainingNotVoted, votingOpen) {
+  const winners = topCandidates(group);
+  if (winners.length > 1) return { winners, clinched: false };
+
+  const leader = winners[0];
+  const runnerUpVotes = Math.max(
+    0,
+    ...group.candidates.filter((c) => c.key !== leader.key).map((c) => c.votes)
+  );
+  const clinched = !votingOpen || leader.votes > runnerUpVotes + remainingNotVoted;
+  return { winners, clinched };
 }
 
 function renderWinners(positions) {
@@ -250,11 +279,13 @@ function buildExportPoster(positions) {
 }
 
 function posterCardHtml(group) {
-  const winners = topCandidates(group);
-  return winners.length > 1 ? tiedPosterCardHtml(group, winners) : singleWinnerPosterCardHtml(group, winners[0]);
+  const winners = group.winners ?? topCandidates(group);
+  return winners.length > 1
+    ? tiedPosterCardHtml(group, winners)
+    : singleWinnerPosterCardHtml(group, winners[0], group.clinched);
 }
 
-function singleWinnerPosterCardHtml(group, winner) {
+function singleWinnerPosterCardHtml(group, winner, clinched) {
   const name = escapeHtml(candidateName(winner));
 
   return `
@@ -262,7 +293,7 @@ function singleWinnerPosterCardHtml(group, winner) {
       <span class="export-card__position">${escapeHtml(group.label)}</span>
       <span class="export-card__photo-wrap">
         <img class="export-card__photo winner-photo" data-key="${winner.key}" src="images/${winner.key}.png" alt="${name}" />
-        <span class="export-card__crown"><i data-lucide="crown"></i></span>
+        ${clinched ? `<span class="export-card__crown"><i data-lucide="crown"></i></span>` : ""}
       </span>
       <strong class="export-card__name">${name}</strong>
     </div>
@@ -285,11 +316,13 @@ function tiedPosterCardHtml(group, winners) {
 }
 
 function winnerCardHtml(group) {
-  const winners = topCandidates(group);
-  return winners.length > 1 ? tiedCardHtml(group, winners) : singleWinnerCardHtml(group, winners[0]);
+  const winners = group.winners ?? topCandidates(group);
+  return winners.length > 1
+    ? tiedCardHtml(group, winners)
+    : singleWinnerCardHtml(group, winners[0], group.clinched);
 }
 
-function singleWinnerCardHtml(group, winner) {
+function singleWinnerCardHtml(group, winner, clinched) {
   const name = escapeHtml(candidateName(winner));
   const party = escapeHtml(winner.partylist || "Independent");
   const votes = winner.votes;
@@ -299,7 +332,7 @@ function singleWinnerCardHtml(group, winner) {
       <span class="winner-position">${escapeHtml(group.label)}</span>
       <span class="winner-photo-wrap">
         <img class="winner-photo" data-key="${winner.key}" data-party="${winner.partylist_key || ""}" src="images/${winner.key}.png" alt="${name}" />
-        <span class="winner-crown"><i data-lucide="crown" class="icon"></i></span>
+        ${clinched ? `<span class="winner-crown"><i data-lucide="crown" class="icon"></i></span>` : ""}
       </span>
       <strong class="winner-name">${name}</strong>
       <span class="winner-party">${party}</span>
