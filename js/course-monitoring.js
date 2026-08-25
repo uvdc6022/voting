@@ -74,11 +74,7 @@ function groupByCourseLevel(users, votes) {
     group.percentage = group.total > 0 ? Math.round((group.voted / group.total) * 1000) / 10 : 0;
   }
 
-  return Array.from(byGroup.values()).sort((a, b) => {
-    const courseCompare = String(a.course).localeCompare(String(b.course));
-    if (courseCompare !== 0) return courseCompare;
-    return Number(a.level) - Number(b.level);
-  });
+  return Array.from(byGroup.values()).sort((a, b) => b.notVoted - a.notVoted);
 }
 
 function renderGroups(groups) {
