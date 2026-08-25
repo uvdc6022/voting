@@ -33,27 +33,36 @@ async function initFinalResults() {
       import("https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js"),
       import("./firebase-config.js"),
     ]);
-    const { getDatabase, ref, get } = dbModule;
+    const { getDatabase, ref, onValue } = dbModule;
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const [candidatesSnap, votesSnap] = await Promise.all([
-      get(ref(db, "candidates")),
-      get(ref(db, "votes")),
-    ]);
+    let candidates = null;
+    let votes = null;
 
-    const candidates = candidatesSnap.val() || {};
-    const voteCounts = countVotes(votesSnap.val() || {});
-    const positions = groupCandidates(candidates, voteCounts);
+    const renderIfReady = () => {
+      if (candidates === null || votes === null) return;
 
-    if (positions.length === 0) {
-      renderEmptyState();
-      return;
-    }
+      const voteCounts = countVotes(votes);
+      const positions = groupCandidates(candidates, voteCounts);
 
-    lastPositions = positions;
-    renderWinners(positions);
+      if (positions.length === 0) {
+        renderEmptyState();
+        return;
+      }
+
+      lastPositions = positions;
+      renderWinners(positions);
+    };
+
+    const onError = (err) => {
+      console.error(err);
+      renderError();
+    };
+
+    onValue(ref(db, "candidates"), (snap) => { candidates = snap.val() || {}; renderIfReady(); }, onError);
+    onValue(ref(db, "votes"), (snap) => { votes = snap.val() || {}; renderIfReady(); }, onError);
   } catch (err) {
     console.error(err);
     renderError();

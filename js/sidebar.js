@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "final-results.html", label: "Final Results", icon: "trophy", roles: [2, 3] },
   { href: "cast-vote.html", label: "Cast Vote", icon: "vote", roles: [1, 2, 3] },
   { href: "users.html", label: "Users", icon: "users", roles: [2, 3] },
+  { href: "voter-records.html", label: "Voter Records", icon: "list-checks", roles: [3] },
   { href: "admins.html", label: "Admins", icon: "shield", roles: [3] },
 ];
 

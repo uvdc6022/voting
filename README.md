@@ -47,6 +47,7 @@ index.html            Login page
 dashboard.html         Live results (admin+)
 cast-vote.html         Ballot / voting control
 users.html             User list & management
+voter-records.html      Per-voter vote lookup (super admin)
 admins.html             Admin management (super admin)
 final-results.html      Final results / winners
 css/styles.css          Shared stylesheet (light + dark themes)

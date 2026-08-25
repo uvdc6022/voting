@@ -718,6 +718,22 @@ body.sidebar-open {
   color: var(--primary-strong);
 }
 
+button.result-votes-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.15s ease;
+}
+
+button.result-votes-btn:hover,
+button.result-votes-btn:focus-visible {
+  text-decoration-color: currentColor;
+}
+
 .result-progress-track {
   height: 6px;
   border-radius: 999px;
@@ -1563,6 +1579,39 @@ body.sidebar-open {
   margin-top: 18px;
 }
 
+.voters-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.voters-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.voters-list-name {
+  font-size: 0.86rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voters-list-id {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
 .modal-actions {
   display: flex;
   gap: 10px;
@@ -1753,6 +1802,75 @@ body.sidebar-open {
   color: var(--text-faint);
   padding: 28px 14px;
   white-space: normal;
+}
+
+.users-table tbody tr.clickable-row {
+  cursor: pointer;
+}
+
+/* ---------- Vote record modal ---------- */
+
+.vote-record-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.vote-record-photo-wrap {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  background: var(--surface);
+}
+
+.vote-record-photo-wrap[data-party="pulso"] {
+  border-color: var(--party-pulso);
+}
+
+.vote-record-photo-wrap[data-party="sulong"] {
+  border-color: var(--party-sulong);
+}
+
+.vote-record-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vote-record-position {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.vote-record-name {
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vote-record-party {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+}
+
+.vote-record-empty {
+  margin: 4px 0 0;
+  font-size: 0.86rem;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 12px 0;
 }
 
 .status-badge {

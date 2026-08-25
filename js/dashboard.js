@@ -31,31 +31,39 @@ async function initResults() {
       import("https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js"),
       import("./firebase-config.js"),
     ]);
-    const { getDatabase, ref, get } = dbModule;
+    const { getDatabase, ref, onValue } = dbModule;
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const [candidatesSnap, usersSnap, votesSnap] = await Promise.all([
-      get(ref(db, "candidates")),
-      get(ref(db, "users")),
-      get(ref(db, "votes")),
-    ]);
+    let candidates = null;
+    let users = null;
+    let votes = null;
 
-    const candidates = candidatesSnap.val() || {};
-    const users = usersSnap.val() || {};
-    const votes = votesSnap.val() || {};
-    const totalVoters = Object.values(users).filter((u) => Number(u?.role) !== 3).length;
-    const voteCounts = countVotes(votes);
+    const renderIfReady = () => {
+      if (candidates === null || users === null || votes === null) return;
 
-    const positions = groupCandidates(candidates, voteCounts);
+      const totalVoters = Object.values(users).filter((u) => Number(u?.role) !== 3).length;
+      const voteCounts = countVotes(votes);
+      const positions = groupCandidates(candidates, voteCounts);
+      const votersByCandidate = mapVotersByCandidate(votes, users);
 
-    if (positions.length === 0) {
-      renderEmptyState();
-      return;
-    }
+      if (positions.length === 0) {
+        renderEmptyState();
+        return;
+      }
 
-    renderResults(positions, totalVoters);
+      renderResults(positions, totalVoters, votersByCandidate);
+    };
+
+    const onError = (err) => {
+      console.error(err);
+      renderError();
+    };
+
+    onValue(ref(db, "candidates"), (snap) => { candidates = snap.val() || {}; renderIfReady(); }, onError);
+    onValue(ref(db, "users"), (snap) => { users = snap.val() || {}; renderIfReady(); }, onError);
+    onValue(ref(db, "votes"), (snap) => { votes = snap.val() || {}; renderIfReady(); }, onError);
   } catch (err) {
     console.error(err);
     renderError();
@@ -72,6 +80,24 @@ function countVotes(votes) {
     }
   }
   return counts;
+}
+
+function mapVotersByCandidate(votes, users) {
+  const map = {};
+  for (const [idNumber, record] of Object.entries(votes)) {
+    if (!record) continue;
+    const u = users[idNumber];
+    const name = u ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() : "";
+    for (const [posKey, candidateKey] of Object.entries(record)) {
+      if (posKey === "idNumber") continue;
+      if (!map[candidateKey]) map[candidateKey] = [];
+      map[candidateKey].push({ idNumber, name: name || idNumber });
+    }
+  }
+  for (const list of Object.values(map)) {
+    list.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return map;
 }
 
 function groupCandidates(candidates, voteCounts) {
@@ -112,7 +138,7 @@ function candidateName(c) {
   return `${c.firstname ?? ""} ${c.lastname ?? ""}`.trim();
 }
 
-function renderResults(positions, totalVoters) {
+function renderResults(positions, totalVoters, votersByCandidate) {
   const role = Number(session?.user?.role);
 
   root.innerHTML = `
@@ -131,7 +157,7 @@ function renderResults(positions, totalVoters) {
       }
     </div>
     <div class="dash-results-list" id="dash-export-target">
-      ${positions.map((group) => positionResultHtml(group, totalVoters)).join("")}
+      ${positions.map((group) => positionResultHtml(group, totalVoters, role)).join("")}
     </div>
   `;
 
@@ -141,6 +167,14 @@ function renderResults(positions, totalVoters) {
   document
     .getElementById("export-dashboard-btn")
     ?.addEventListener("click", (e) => exportDashboardAsImage(e.currentTarget));
+
+  if (role === 3) {
+    root.querySelectorAll(".result-votes-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        openVotersModal(btn.dataset.name, votersByCandidate[btn.dataset.key] || []);
+      });
+    });
+  }
 }
 
 // ---------- Export as image (role 3 only) ----------
@@ -192,24 +226,29 @@ async function exportDashboardAsImage(btn) {
   }, 1500);
 }
 
-function positionResultHtml(group, totalVoters) {
+function positionResultHtml(group, totalVoters, role) {
   return `
     <section class="position-block">
       <div class="position-head">
         <h3>${escapeHtml(group.label)}</h3>
       </div>
       <div class="result-rows">
-        ${group.candidates.map((c) => candidateResultHtml(c, totalVoters)).join("")}
+        ${group.candidates.map((c) => candidateResultHtml(c, totalVoters, role)).join("")}
       </div>
     </section>
   `;
 }
 
-function candidateResultHtml(c, totalVoters) {
+function candidateResultHtml(c, totalVoters, role) {
   const name = escapeHtml(candidateName(c));
   const party = escapeHtml(c.partylist || "Independent");
   const votes = c.votes || 0;
   const pct = totalVoters > 0 ? Math.min(100, (votes / totalVoters) * 100) : 0;
+  const voteLabel = `${votes} vote${votes === 1 ? "" : "s"}`;
+  const votesHtml =
+    role === 3
+      ? `<button type="button" class="result-votes result-votes-btn" data-key="${c.key}" data-name="${name}">${voteLabel}</button>`
+      : `<span class="result-votes">${voteLabel}</span>`;
 
   return `
     <div class="result-row">
@@ -219,7 +258,7 @@ function candidateResultHtml(c, totalVoters) {
       <div class="result-info">
         <div class="result-info-top">
           <strong class="candidate-name">${name}</strong>
-          <span class="result-votes">${votes} vote${votes === 1 ? "" : "s"}</span>
+          ${votesHtml}
         </div>
         <span class="candidate-party">${party}</span>
         <div class="result-progress-track">
@@ -237,6 +276,59 @@ function hydrateCandidatePhotos(scope) {
       img.src = DEFAULT_PHOTO;
     });
   });
+}
+
+// ---------- Voters modal (role 3 only) ----------
+
+function openVotersModal(candidateName, voters) {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.id = "voters-modal";
+  overlay.innerHTML = `
+    <div class="modal-card">
+      <h3>${escapeHtml(candidateName)}</h3>
+      <p>${voters.length} voter${voters.length === 1 ? "" : "s"} selected this candidate.</p>
+      <div class="voters-list">
+        ${
+          voters.length === 0
+            ? `<p class="vote-record-empty">No votes yet.</p>`
+            : voters.map((v) => voterRowHtml(v)).join("")
+        }
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="voters-modal-close">
+          <i data-lucide="x" class="icon"></i>
+          <span>Close</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  if (window.lucide) window.lucide.createIcons();
+
+  const closeModal = () => {
+    overlay.remove();
+    document.removeEventListener("keydown", onKeydown);
+  };
+  const onKeydown = (e) => {
+    if (e.key === "Escape") closeModal();
+  };
+  document.addEventListener("keydown", onKeydown);
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) closeModal();
+  });
+  document.getElementById("voters-modal-close").addEventListener("click", closeModal);
+}
+
+function voterRowHtml(v) {
+  return `
+    <div class="voters-list-row">
+      <span class="voters-list-name">${escapeHtml(v.name)}</span>
+      <span class="voters-list-id">${escapeHtml(v.idNumber)}</span>
+    </div>
+  `;
 }
 
 function renderEmptyState() {
